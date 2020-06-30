@@ -1,0 +1,156 @@
+//
+// Protocol buffers definition for Silo server
+//
+syntax = "proto3";
+package pt.tecnico.sauron.silo.grpc;
+import "google/protobuf/timestamp.proto";
+import "google/type/latlng.proto";
+
+message VectorClock {
+    repeated int32 updates = 1;
+}
+
+message Observable {
+    string type = 1;
+    string identifier = 2;
+}
+
+message Camera {
+    string name = 1;
+    google.type.LatLng coords = 2;
+}
+
+message Observation {
+    Observable observated = 1;
+    Camera camera = 2;
+    google.protobuf.Timestamp time = 3;
+}
+
+message CamJoinRequest {
+    Camera camera = 1;
+    VectorClock prev = 2;
+}
+
+message CamJoinResponse {
+    VectorClock new = 1;
+}
+
+message CamInfoRequest {
+    string name = 1;
+    VectorClock prev = 2;
+}
+
+message CamInfoResponse {
+    VectorClock new = 1;
+    Camera camera = 2;
+}
+
+message ReportRequest {
+    string cameraName = 1;
+    repeated Observation observations = 2;
+    VectorClock prev = 3;
+}
+
+message ReportResponse {
+    VectorClock new = 1;
+}
+
+message TrackRequest {
+    Observable identity = 1;
+    VectorClock prev = 2;
+}
+
+message TrackResponse {
+    Observation observation = 1;
+    VectorClock new = 2;
+    bool valid = 3;
+}
+
+message TrackMatchRequest {
+    Observable identity = 1;
+    VectorClock prev = 2;
+}
+
+message TrackMatchResponse {
+    repeated Observation observations = 1;
+    VectorClock new = 2;
+}
+
+message TraceRequest {
+    Observable identity = 1;
+    VectorClock prev = 2;
+}
+
+message TraceResponse {
+    repeated Observation observations = 1;
+    VectorClock new = 2;
+}
+
+message ControlPingRequest {
+    string inputText = 1;
+}
+
+message ControlPingResponse {
+    string status = 1;
+}
+
+message ControlClearRequest {
+    //empty
+}
+
+message ControlClearResponse {
+}
+
+message ControlInitRequest {
+    repeated Observation observation = 1;
+    VectorClock prev = 3;
+}
+
+message ControlInitResponse {
+    VectorClock new = 3;
+}
+
+message GossipRequest {
+    VectorClock ts = 1;
+    repeated LogElement updates = 2;
+    int32 incomingReplicaIndex = 3;
+}
+
+message GossipResponse {
+    VectorClock ts = 1;
+}
+
+message GetReplicaTimestampRequest {
+    //Empty
+}
+
+message GetReplicaTimestampResponse {
+    VectorClock currentTS = 1;
+}
+
+message LogElement {
+    message ObservationLog {
+        repeated Observation observation = 1;
+    }
+    VectorClock ts = 1;
+    oneof content {
+        ObservationLog observation = 2;
+        Camera camera = 3;
+    }
+    int32 origin = 4; //This is the replica that first created this element
+}
+
+
+service Sauron {
+    rpc GetReplicaTimestamp(GetReplicaTimestampRequest) returns (GetReplicaTimestampResponse);
+    rpc Gossip(GossipRequest) returns (GossipResponse);
+    rpc CamJoin(CamJoinRequest) returns (CamJoinResponse);
+    rpc CamInfo(CamInfoRequest) returns (CamInfoResponse);
+    rpc Report(ReportRequest) returns (ReportResponse);
+    rpc Track(TrackRequest) returns (TrackResponse);
+    rpc TrackMatch(TrackMatchRequest) returns (TrackMatchResponse);
+    rpc Trace(TraceRequest) returns (TraceResponse);
+    rpc ControlClear(ControlClearRequest) returns (ControlClearResponse);
+    rpc ControlPing(ControlPingRequest) returns (ControlPingResponse);
+    rpc ControlInit(ControlInitRequest) returns (ControlInitResponse);
+}
